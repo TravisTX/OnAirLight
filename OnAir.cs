@@ -71,7 +71,7 @@ namespace OnAirLight
             var lastUsedTimeStop = (long)key.GetValue("LastUsedTimeStop", (long)-1);
             if (lastUsedTimeStop == 0)
             {
-                _logger.LogInformation($"{keyName}: {lastUsedTimeStop}");
+                _logger.LogDebug(keyName);
                 return true;
             }
 
