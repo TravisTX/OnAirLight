@@ -59,13 +59,29 @@ namespace OnAirLight
             }
         }
 
-        private bool GetCameraInUse()
+        private bool GetCameraInUse(string keyName = null)
         {
-            var keyName = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\webcam\Microsoft.WindowsCamera_8wekyb3d8bbwe";
-            var valueName = "LastUsedTimeStop";
-            var lastUsedTimeStop = (long)Registry.GetValue(keyName, valueName, -1);
-            var cameraInUse = lastUsedTimeStop == 0;
-            return cameraInUse;
+            if (keyName == null)
+            {
+                keyName = @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\webcam\";
+            }
+
+            var key = Registry.LocalMachine.OpenSubKey(keyName);
+
+            var lastUsedTimeStop = (long)key.GetValue("LastUsedTimeStop", (long)-1);
+            if (lastUsedTimeStop == 0)
+            {
+                _logger.LogInformation($"{keyName}: {lastUsedTimeStop}");
+                return true;
+            }
+
+            foreach (var subKeyName in key.GetSubKeyNames())
+            {
+                var camInUse = GetCameraInUse(keyName + subKeyName + "\\");
+                if (camInUse) return true;
+            }
+
+            return false;
         }
 
         private async Task SetHueLight(bool on)
