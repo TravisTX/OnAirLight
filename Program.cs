@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
+using System;
+using System.IO;
 
 namespace OnAirLight
 {
@@ -12,7 +14,11 @@ namespace OnAirLight
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug)
-                .WriteTo.File("onair.log", restrictedToMinimumLevel: LogEventLevel.Information, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7)
+                .WriteTo.File(
+                    path: Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "onair.log"),
+                    restrictedToMinimumLevel: LogEventLevel.Information,
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 7)
                 .CreateLogger();
 
             Host.CreateDefaultBuilder(args)
