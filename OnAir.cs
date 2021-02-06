@@ -14,8 +14,8 @@ namespace OnAirLight
     public class OnAir : BackgroundService
     {
         private IConfiguration _configuration;
-        private static readonly HttpClient _httpClient = new HttpClient();
         private ILogger _logger;
+        private static readonly HttpClient _httpClient = new HttpClient();
         private bool _lastState = false;
 
         public OnAir(IConfiguration configuration, ILogger<OnAir> logger)
