@@ -15,20 +15,23 @@ namespace OnAirLight
     {
         private IConfiguration _configuration;
         private ILogger _logger;
-        private static readonly HttpClient _httpClient = new HttpClient();
+        private readonly HttpClient _httpClient;
         private Timer _hueTimer;
-        private static bool _hueState;
+        private bool _cameraState;
+        private bool _hueState;
+        private int _offCounter = 0;
 
         public OnAir(IConfiguration configuration, ILogger<OnAir> logger)
         {
             _configuration = configuration;
             _logger = logger;
+            _httpClient = new HttpClient();
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Hello, World!");
-            SetHueTimer();
+            ScheduleHueTimer();
             await SetHueLight(false);
 
             while (true)
@@ -46,12 +49,17 @@ namespace OnAirLight
         {
             try
             {
-                bool cameraInUse = GetCameraInUse();
-                _logger.LogDebug($"camera in use: {cameraInUse}");
+                _cameraState = GetCameraInUse();
+                _logger.LogDebug($"camera in use: {_cameraState}");
 
-                if (_hueState != cameraInUse)
+                if (_cameraState)
                 {
-                    await SetHueLight(cameraInUse);
+                    _offCounter = 0;
+                }
+
+                if (_hueState != _cameraState)
+                {
+                    await SetHueLight(_cameraState);
                 }
             }
             catch (Exception ex)
@@ -87,6 +95,12 @@ namespace OnAirLight
 
         private async Task SetHueLight(bool on)
         {
+            if (!on && _offCounter++ <= 3)
+            {
+                _logger.LogInformation("Waiting to turn off light");
+                return;
+            }
+
             _logger.LogInformation($"Setting light: {on}");
 
             var username = _configuration["hue:username"];
@@ -120,14 +134,15 @@ namespace OnAirLight
             }
             finally
             {
-                SetHueTimer();
+                ScheduleHueTimer();
             }
         }
 
-        private void SetHueTimer()
+        private void ScheduleHueTimer()
         {
+            var hueTimerInterval = _cameraState ? TimeSpan.FromSeconds(30) : TimeSpan.FromMinutes(10);
             _hueTimer?.Dispose();
-            _hueTimer = new Timer(async x => await HueStateTimerEvent(), null, TimeSpan.FromSeconds(30), new TimeSpan(0, 0, 0, 0, -1));
+            _hueTimer = new Timer(async x => await HueStateTimerEvent(), null, hueTimerInterval, new TimeSpan(0, 0, 0, 0, -1));
         }
 
         private async Task GetHueLightState()
