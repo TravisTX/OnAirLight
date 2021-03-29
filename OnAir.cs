@@ -111,9 +111,9 @@ namespace OnAirLight
             var bodyJson = JsonSerializer.Serialize(new
             {
                 on = on,
-                sat = 254,
-                bri = 254,
-                hue = _configuration.GetValue<int>("onAirLightColor")
+                hue = _configuration.GetValue<int>("onAirColor"),
+                bri = _configuration.GetValue<int>("onAirBrightness"),
+                sat = _configuration.GetValue<int>("onAirSaturation"),
             });
 
             using (var content = new StringContent(bodyJson, Encoding.UTF8, "application/json"))
